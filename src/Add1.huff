@@ -11,19 +11,20 @@
 
 #define function add1(uint256) payable returns(uint256)
 
+// everytime a function is called, remember to offset to isolate the function selector
 
 #define macro MAIN() = takes(0) returns(0) {
 
     //get the function selector
-    0x00
-    calldataload
-    0xe0
-    shr
+    0x00 // [0]
+    calldataload //calldataload then loads first 32bytes into stack // [function selector + data]
+    0xe0 // push [224] to represent 256-32 bits = 28 bytes // [224, function selector + data]
+    shr  // shr shift out calldata by 28 bytes to only place the 4 bytes function selector on the stack
 
     __FUNC_SIG(add1) eq add1 jumpi
 
     0x00 0x00 revert
-    
+
     add1:
         ADD_ONE()
 
@@ -37,3 +38,6 @@
     0x00 mstore // [] mem -> [1+n]
     0x20 0x00 return // []
 }
+
+
+
