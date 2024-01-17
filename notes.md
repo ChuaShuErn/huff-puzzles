@@ -28,3 +28,17 @@ GPT Explanation: Yes, The return opcode also takes two parameters: the first is 
 
 // In solidity, the compiler will pad short strings such that it will fit into 32 bytes
 // in huff, developer needs to manually pad short strings
+
+For a function that accepts a single uint256 argument (which is 32 bytes), the calldata layout would look like this:
+
+First 32-Byte Word:
+
+The first 4 bytes contain the function selector.
+The next 28 bytes contain the beginning of the uint256 argument.
+Second 32-Byte Word:
+
+The first 4 bytes of this word contain the remaining part of the uint256 argument.
+The rest of this second word would be zeros if there are no additional arguments.
+
+First 32-byte word: [Function Selector (4 bytes)] [First 28 bytes of uint256 Argument]
+Second 32-byte word: [Last 4 bytes of uint256 Argument] [Padding (if no more arguments)]

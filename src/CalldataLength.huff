@@ -8,6 +8,16 @@
  *  The task is to write within the `MAIN` macro below, huff code to get and return the length of this calldata, 
 */
 
+// name of opcode required is calldatasize
 #define macro MAIN() = takes(0) returns(0) {
+    calldatasize // [calldatasize]
+    0x00 // [0,calldatasize]
+    mstore // []
+
+    // mem -> [calldatasize]
+
+    0x20 // [32]
+    0x00 // [32,0]
     
+    return // []
 }
