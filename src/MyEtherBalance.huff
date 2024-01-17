@@ -6,7 +6,18 @@
  *  
  *  The task is to write within the `MAIN` macro below, huff code that retrieves the ether balance of the address that sent the transaction, also known as msg.sender in solidity. 
  */
+ //CALLER gets address of msg.sender
+ //BALANCE if address in stack, will push balance?
+ // seems that we have two transactions?
 
+ // we return a uint256
 #define macro MAIN() = takes(0) returns(0) {
-   
+    caller // [msg.sender]
+    balance // [balance]
+    0x00 // [0,balance]
+    mstore // [] mem -> [balance]
+
+   0x20 //[20]
+   0x00 //[0,20]
+   return
 }
