@@ -8,6 +8,26 @@
  *  The task is to write within the `MAIN` macro below, huff code to get and return the amount of ether sent as part of that call 
 */
 
+
+// Ether (msg.value) is not sent in calldata
+// It is part of the transaction context
+// which is accessed by callvalue
 #define macro MAIN() = takes(0) returns(0) {
+
+    // Load the transaction's value (msg.value) onto the stack
+    callvalue // [msg.value]
+
+    // Store it in memory
+    0x00 // [0, msg.value]
+    mstore // []
     
+    // mem -> [msg.value]
+
+    // Return the value from memory
+    0x20 // [32]
+    0x00 // [32, 0]
+    return // []
 }
+
+
+
