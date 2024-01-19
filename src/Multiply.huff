@@ -14,4 +14,106 @@
 
 #define macro MAIN() = takes(0) returns(0) {
 
+
+    //Get function selector onto the stack
+    0x00 calldataload 0xe0 shr // [sig]
+    
+    __FUNC_SIG(multiply) // [multiplySig, sig]
+    
+    eq //[multiplySig == sig]
+    multiplyLabel //[multiplyLabel, multiplySig == sig, sig]
+    jumpi //[sig]
+
+    0x00 0x00 revert //revert if didn't jump (wrong function sig)
+    multiplyLabel:
+        MULTIPLY()
+
+
+
+}
+
+// be sure to revert on overflow
+
+// #define macro MULTIPLY() = takes(0) returns (0){    
+
+//     0x04 calldataload // [a]
+//     0x24 calldataload // [b,a]
+//     0x24 calldataload // [b,b,a]
+//     0x04 calldataload // [a,b,b,a]
+    
+//     // lets check if b is zero
+//     0x24 calldataload //[b,a,b,b,a]
+//     iszero  // [iszero,a,b,b,a]
+//     noOverflow jumpi 
+
+//     // continue
+//     // state [a,b,b,a]
+//     // a could be zero
+//     mul // [a*b,b,a]
+//     div // [a*b/b,a]
+//     eq // [eq]
+//     normalMul jumpi
+
+//     0x00 0x00 revert
+
+
+
+//     noOverflow:
+//         //state [a,b,b,a]
+//         mul // [a*b,b,a]
+//         0x00 mstore
+//         0x20 0x00 return
+
+//     normalMul:
+
+//     0x04 calldataload // [a]
+//     0x24 calldataload // [b,a]
+//     mul
+//     0x00 mstore
+//     0x20 0x00 return
+// }
+
+//this one with dups
+#define macro MULTIPLY() = takes(0) returns (0){    
+
+    0x04 calldataload // [a]
+    0x24 calldataload // [b,a]
+    dup1 //0x24 calldataload // [b,b,a]
+
+    dup3 //0x04 calldataload // [a,b,b,a]
+    
+    // lets check if b is zero
+    
+    dup2 //0x24 calldataload //[b,a,b,b,a]
+    iszero  // [iszero,a,b,b,a]
+    noOverflow jumpi 
+
+    // continue
+    // state [a,b,b,a]
+    // a could be zero
+    dup2 // [b,a,b,b,a]
+    mul // [a*b,b,b,a]
+    div // [a*b/b,b,a]
+    dup3 // [a,a*b/b,b,a]
+    eq // [a == a*b/b,b,a]
+    normalMul jumpi
+
+    0x00 0x00 revert
+
+
+
+    noOverflow:
+        //state [a,b,b,a]
+        mul // [a*b,b,a]
+        0x00 mstore
+        0x20 0x00 return
+
+    normalMul:
+
+    // 0x04 calldataload // [a]
+    // 0x24 calldataload // [b,a]
+    //state [b,a]
+    mul
+    0x00 mstore
+    0x20 0x00 return
 }
