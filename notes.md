@@ -42,3 +42,6 @@ The rest of this second word would be zeros if there are no additional arguments
 
 First 32-byte word: [Function Selector (4 bytes)] [First 28 bytes of uint256 Argument]
 Second 32-byte word: [Last 4 bytes of uint256 Argument] [Padding (if no more arguments)]
+
+JUMPI:
+Any Non Zero value will cause it to jump
