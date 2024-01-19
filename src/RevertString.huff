@@ -11,7 +11,28 @@
  *  The task is to write within the `MAIN` macro below, huff code that reverts (all the time) with the string error message `Only Huff`
 */
 
+// encoded in 3 parts, each which takes a full word (32 bytes) of memory.
+
+// The offset of the dynamic data. (pointer to the start of the dynamic data, uint256)
+// The length of the dynamic data. (uint256)
+// The values of the dynamic data. (dynamic length)
+//used python
+//size is 9
+#define constant ONLY_HUFF = 0x4f6e6c792048756666
 
 #define macro MAIN() = takes(0) returns(0) {
+
+    //store dynamic offset of 0x20 at 0x00
+    0x20 0x00 mstore
+
+    // store string length of 0x09 at 0x20
+    0x09 0x20 mstore
+
+    // store bytes for "Only Huff" at 0x40
+    __RIGHTPAD(0x4f6e6c792048756666)
+    0x40
+    mstore
+    //revert with full 96 byte value
+    0x60 0x00 revert
     
 }
