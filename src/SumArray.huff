@@ -9,8 +9,102 @@
  */
 
 #define function sumArray(uint256[]) payable returns(uint256)
-
+    //Preparation of the stack for do while loop
+    //We calculate the offset of the last number in the loop
+    //Calldata has in position 0x00 4 bytes of selector
+    //in position 0x04 the offset of the array
+    //in position 0x24 the length of the array
+    //in position 0x44 the first item in the array
+    //To calculate the position of the last item we multiply 32 by the length and add it to the initial part of the stack 32 + 4
 
 #define macro MAIN() = takes(0) returns(0) {
+
+    //isolate function selector
+    0x00 calldataload 0xe0 shr // [sig]
+
+    __FUNC_SIG(sumArray) eq calc jumpi
+
+    0x00 0x00 revert
+    
+    calc:
+        SUMARRAY()
+    
+
+
+
+}
+
+#define macro SUMARRAY() = takes(0) returns (0){
+    //current state 
+    // []
+    0x04 calldataload // [offset]
+    0x24 calldataload // [len,offset]
+    dup1 // [len,len,offset]
+    0x00 // [0,len,len,offset]
+    eq // [0==len,len,offset]
+    zero_len jumpi
+    // if len == 0, return 0
+    // state is now [len,offset]
+    0x00 // [index0,len,offset]
+    0x00 // [accum,index,len,offset]
+    // break loop if index == len
+    // access first ele with offset and len
+    dup4 // [offset,accum,index,len,offset]
+    0x20 // [32bytewordforlen,offset,accum,index,len,offset]
+    0x04 // [4,32bytewordforlen,offset,accum, index,len,offset]
+    add // [4+32bytewordforlen, offset,accum, index,len,offset]
+    add // [4+32bytewordforlen+offset,accum,index,len,offset]
+    //rename to pointer
+    // [callDataPointer,accum,index,len,offset]
+    swap1 // [accum,callDataPointer,index,len,offset]
+    loop:
+    //state = [accum,callDataPointer,index,len,offset]
+        dup2 //[callDataPointer,accum,callDataPointer,index,len,offset]
+        //get ele
+        calldataload // [ele,accum,callDataPointer,index,len,offset]
+        // add accum and ele
+        add // [ele+accum, calldatapointer index,len,offset]
+        // increment increment calldatapointer
+       dup2 0x20 add // [calldataPointer incr, ele+accum, calldatapointer, index,len,offset]
+       swap2 // [calldataPointerOld, ele+accum, calldatapointerIncr, index,len,offset]
+       pop //[ele+accum, calldatapointerIncr, index,len,offset]
+       // increment index
+       dup3 0x01 add // [indexNew,ele+accum, calldatapointerIncr, indexOld,len,offset]
+       swap3 // [indexOld,ele+accum, calldatapointerIncr, indexNew,len,offset]
+       pop //[ele+accum, calldatapointerIncr, indexNew,len,offset]
+       // check len and indexNew
+       dup4 // [len,ele+accum, calldatapointerIncr, indexNew,len,offset]
+       dup4 //[indexNew,len,ele+accum, calldatapointerIncr, indexNew,len,offset]
+       
+       lt loop jumpi
+       
+        
+
+
+    
+
+    // loop:
+    //     //[accum,index,len,offset]
+    //     // access first item
+
+
+        
+        
+        
+    //     //loop if index < len
+    //     lt loop jumpi
+
+
+
+
+    0x00
+    mstore
+    0x20 0x00 return
+
+    zero_len:
+        0x00
+        mstore
+        0x20 0x00 return
+
 
 }
