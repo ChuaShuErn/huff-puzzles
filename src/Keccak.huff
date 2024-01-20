@@ -7,7 +7,28 @@
  *  The task is to write within the `MAIN` macro below, a function that returns the keccak256 of the calldata. Should handle zero calldata
  */
 
-
+// bytes have
+// 0x20 offset
+// 0x40 len
+// 0x60 value
  #define macro MAIN() = takes(0) returns(0) {
+    //get word
+    0x00 calldataload // [offset]
+    0x00 mstore // [] // mem [offset]
+
+    0x20 calldataload // [size] // mem [offset]
+    0x20 mstore // [] // mem [offset+size]
+
+    0x40 calldataload // [value] // mem [offset+size]
+    0x40 mstore // [] // mem [offset+size+value]
+
+    0x60 // [hash size] // mem [offset+size+value]
+    0x00 // [offsetAt0x00, hash size] // mem [offset+size+value]
+    sha3 // [keccak] // mem [offset+size+value]
+    0x00 mstore //  [] // mem [keccak+size+value]
+
+    0x20 0x00 return // return [keccak]   // mem [keccak+size+value]
+
     
  }
+
