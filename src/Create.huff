@@ -47,9 +47,9 @@
 // DUP1             ->  0x600a80  
 // PUSH1 0x09       ->  0x600a806009 // what is 9?   [9,10,10]
 // RETURNDATASIZE   ->  0x600a8060093d // what is he returning?   [size,9,10,10]
-// CODECOPY         ->  0x600a8060093d39 // what is codecopy for? 
-// RETURNDATASIZE   ->  0x600a8060093d393d // return data size again?
-// RETURN           ->  0x600a8060093d393df3 // return?
+// CODECOPY         ->  0x600a8060093d39 // what is codecopy for? ?? [10] // mem [codecopy]
+// RETURNDATASIZE   ->  0x600a8060093d393d // return data size again? [size,10]
+// RETURN           ->  0x600a8060093d393df3 // return? return 10 bytes???
 
 // Runtime code
 // PUSH3 0x0caffe  ->  0x620caffe
