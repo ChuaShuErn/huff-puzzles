@@ -10,5 +10,92 @@
 #define function maxOfArray(uint256[]) payable returns(uint256)
 
 #define macro MAIN() = takes(0) returns(0) {
+
+    0x00 calldataload 0xe0 shr // [sig]
+    
+    __FUNC_SIG(maxOfArray) // [sig,sig]
+    eq findMax jumpi
+
+    0x00 0x00 revert
+
+    findMax:
+        FINDMAX()
    
 }
+
+#define macro FINDMAX() = takes(0) returns(0){
+
+    //state []
+    // 0x04 offset
+    // 0x24 len
+    // revert if len == 0
+    0x24 calldataload // [len]
+    0x00 // [0,len]
+    eq zero_len jumpi
+
+    //state []
+    0x04 calldataload // [offset]
+    0x24 calldataload // [len,offset]
+    0x00 // [index0,len,offset]
+    //get first element
+    dup3 // [offset,index0,len,offset]
+   // 0x20 add // [wordLength+offset,index0,len,offset]
+    0x04 add // [calldatapointer,index0,len,offset]
+    0x00 // [accum, calldatapointer,index0,len,offset]
+
+    loop:
+        
+        //state [accum, calldatapointer,index0,len,offset]
+        //increment calldata pointer
+    
+        dup2 //[calldatapointer,accum,calldatapointer,index0,len,offset]
+        0x20 //[word,calldatapointer,accum,calldatapointer,index0,len,offset]
+        add // [correctDatPointer,accum,calldatapointer,index,len,offset]
+        swap2 // [calldatPointer,accum,correctDatPointer,index,len,offset]
+        pop //[accum,correctDatPointer,index,len,offset]
+        //increment index 
+        dup3  //[index,accum,correctDatPointer,index,len,offset]
+        0x01 //[1,index,accum, calldatapointer,index0,len,offset]
+        add //[1+index,accum, calldatapointer,index0,len,offset]
+        swap3 pop //[accum, calldatapointer,index,len,offset]
+        
+
+        dup2 //[calldatapointer,accum, calldatapointer,index,len,offset]
+        calldataload //[ele,accum, calldatapointer,index,len,offset]
+        // if ele > accum swap1
+        dup2 //[accum,ele,accum, calldatapointer,index,len,offset]
+        dup2 // [ele,accum,ele,accum,calldatapoitner,index, len, offset]
+        // if ele is greater than accum 
+        gt // [ele>accum,ele,accum,calldatapoitner,index, len, offset]
+        eleGreater
+        jumpi
+
+        // if ele is less continue here
+        // state [ele,accum,calldatapoitner,index, len, offset]
+        // dont swap
+        pop //[accum,calldatapoitner,index, len, offset]
+        dup4 //[len,accum,calldatapoitner,index, len, offset]
+        dup4 // [index,len,accum,calldatapoitner,index, len, offset]
+        lt // [index<len,accum,calldatapoitner,index, len, offset]
+        loop jumpi // loop if index still less than
+        // else return
+        0x00 mstore
+        0x20 0x00 return
+
+
+        eleGreater:
+            //// [ele,accum,calldatapoitner,index, len, offset]
+            swap1 // [accum,ele,calldatapoitner,index, len, offset]
+            pop //// [ele,calldatapoitner,index, len, offset]
+            // if index less than offset, go back to loop
+            dup4 // [len,ele,calldatapoitner,index, len, offset]
+            dup4 // [index,len,ele,calldatapoitner,index, len, offset]
+            lt loop jumpi
+            // return ele
+            0x00 mstore
+            0x20 0x00 return
+        
+    zero_len:
+        0x00 0x00 revert
+}
+
