@@ -11,7 +11,32 @@
  
  #define event Value(uint256 indexed, uint256)
 
+// GPT Explanation:
+// The event signature hash is similar to a function selector but for events. It's computed as the Keccak-256 hash of the event signature.
+// The indexed arguments are passed as topics to the LOG opcode.
+// The non-indexed event data must be in memory and is referenced by its starting position and size when calling the LOG opcode.
 
+// LOG2
+// offset: byte offset in the memory in bytes.
+// size: byte size to copy.
+// topic1: 32-byte value.
+// topic2: 32-byte value.
  #define macro MAIN() = takes(0) returns(0) {
+
+    0x00 calldataload 0xe0 shr
+    
+    
+    __FUNC_SIG(value) eq emitLabel jumpi
+    0x00 0x00 revert
+
+    emitLabel:
+        0x24 calldataload // [non-indexed arg2]
+        0x00 mstore // []
+        0x04 calldataload // [indexed arg1] 
+        __EVENT_HASH(Value) // [sig,indexed arg1]
+        0x20 // [size(32 byte word),indexed arg]
+        0x00 // [0(offset),word (size),indexed arg]
+        log2
+
     
  }
