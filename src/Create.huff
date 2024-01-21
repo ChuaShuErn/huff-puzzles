@@ -10,7 +10,11 @@
  */
 
  //600a8060093d393df3620caffe3d5260203df3
+//create opcode
 
+// value: value in wei to send to the new account.
+// offset: byte offset in the memory in bytes, the initialisation code for the new account.
+// size: byte size to copy (size of the initialisation code).
  #define function makeContract() payable returns(address)
 
 
@@ -20,14 +24,18 @@
 
      0x00 0x00 revert
      createLabel:
-        0x600a8060093d393df3620caffe3d5260203df3
-        0x00
-        mstore
-        0x13
-        0x0d
-        0x00
-        create
+        0x600a8060093d393df3620caffe3d5260203df3 // [runtimecode]
+        0x00 // [0,runtimecode]
+        mstore // [] // mem [runtimecode]
+        0x13 // [19] // mem [runtimecode]
+        0x0d // [13,19] // mem [runtimecode]
+        0x00// [0(gas),13(offset),19(size)]  // mem [runtimecode]
+        create // [address]
+        dup1 iszero deploymentFailed jumpi
         0x00 mstore 0x20 0x00 return
+
+        deploymentFailed:
+            0x00 0x00 revert
 
     
  }
