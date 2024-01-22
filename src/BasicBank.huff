@@ -9,8 +9,97 @@
  */
 
 #define function balanceOf(address) payable returns(uint256)
-#define function withdraw(uint256) payable returns()
+//#define function withdraw(uint256) payable returns()
+#define function withdraw(uint256) payable returns(uint256)
+// wait why do I need to sstore the donator's balance
+// i thought balance is tracked via the EVM?
 
 #define macro MAIN() = takes(0) returns(0) {
 
+    0x00 calldataload 0xe0 shr // [sig]
+    dup1 __FUNC_SIG(balanceOf) eq balanceOfLabel jumpi
+
+     __FUNC_SIG(withdraw) eq withdrawLabel jumpi
+
+    UPDATEBALANCE()
+
+    balanceOfLabel:
+        BALANCEOF()
+    withdrawLabel:
+        WITHDRAW()
+        
+        
+
+    
+
+
+
 }
+
+#define macro BALANCEOF() = takes (0) returns (1){
+    // state []
+    // get address arg
+    0x04 calldataload // [address]
+    // address as key sload
+    sload // [address.balance]
+    0x00 // [0,address.balance]
+    mstore 0x20 0x00 return
+
+
+
+
+
+
+
+}
+
+#define macro WITHDRAW() = takes (0) returns (0){
+    // revert if balance not enough
+    
+    // get caller
+    // state []
+    caller // [caller]
+    sload // [caller's balance]
+    0x04 calldataload // [arg1,caller's balance, ]
+    gt //[arg1 >caller's balance ?,]
+    notEnoughGas jumpi
+    // [caller's balance]
+    0x00 dup1 dup1 dup1 // [0,0,0,0,callersBalance]
+   0x04 calldataload //[value,0,0,0,0,callersBalance]
+   caller //[msg.sender,value,0,0,0,0,callersBalance]
+   gas //[gas,msg.sender,value,0,0,0,0,callersBalance]
+   call
+   // update mapping
+   0x04 calldataload //[ arg1]
+   caller sload // [address balance,arg1]
+   sub // [address balance-arg1]
+   caller // [caller, newBalance]
+   sstore
+
+
+   stop
+
+
+    
+
+
+    notEnoughGas:
+        0x00 0x00 revert
+   
+
+  
+    
+    
+}
+
+#define macro UPDATEBALANCE() = takes(0) returns (0){
+    caller //[msg.sender]
+    sload // [msg.sender.balance]
+    callvalue // [msg.value,msg.sender.balance]
+    add // [updatedBalance]
+    caller // [msg.sender, updatedBalance]
+    sstore 
+    stop
+
+}
+
