@@ -53,11 +53,9 @@
     div // [a*b/b,b,a]
     dup3 // [a,a*b/b,b,a]
     eq // [a == a*b/b,b,a]
-    normalMul jumpi
+    noOverflow jumpi
 
     0x00 0x00 revert
-
-
 
     noOverflow:
         //state [a,b,b,a]
@@ -65,12 +63,4 @@
         0x00 mstore
         0x20 0x00 return
 
-    normalMul:
-
-    // 0x04 calldataload // [a]
-    // 0x24 calldataload // [b,a]
-    //state [b,a]
-    mul
-    0x00 mstore
-    0x20 0x00 return
 }
