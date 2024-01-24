@@ -10,9 +10,102 @@
  *  NOTICE: The contract should revert when an unrecognized function is called
  */
 
+// ["0x328809Bc894f92807417D2dAD6b7C998c1aFdac6",
+// "0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e",
+// "0xea475d60c118d7058beF4bDd9c32bA51139a74e0"]
+
+//send only alice
+
+// 0x6138889b
+// 0000000000000000000000000000000000000000000000000000000000000020 // offset
+// 0000000000000000000000000000000000000000000000000000000000000001 // length
+// 000000000000000000000000328809bc894f92807417d2dad6b7c998c1afdac6 // alice
+
+
+// send alice, bob and charlie
+
+// 0x6138889b
+// 0000000000000000000000000000000000000000000000000000000000000020 //offset
+// 0000000000000000000000000000000000000000000000000000000000000003 // length
+// 000000000000000000000000328809bc894f92807417d2dad6b7c998c1afdac6 // alice
+// 0000000000000000000000001d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e // bob
+// 000000000000000000000000ea475d60c118d7058bef4bdd9c32ba51139a74e0 // charlie
  #define function distribute(address[]) payable returns()
 
 
  #define macro MAIN() = takes(0) returns(0) {
+
+    0x00 calldataload 0xe0 shr // [sig]
+
+    __FUNC_SIG(distribute) eq distributeLabel jumpi 
+
+    reverter:
+    0x00 0x00 revert
+
+   distributeLabel:
+
+      // get length
+      0x24 calldataload // [len] 
+      dup1 iszero reverter jumpi
+      // stack [len]
+      dup1 // [len,len]
+      callvalue // [etherSent,len,len]
+      div // [splitValue,len]
+      swap1 // [len, splitValue]
+      // we need to get the first pointer
+      // init pointer 
+      0x44 // [pointerForFirstElement,len,splitValue]
+      swap1 // [len,pointerForFirstElement,splitValue]
+      0x00 // [index0, len,pointerForFirstElement,splitValue]
+      loop:
+         LOOP()
+
+
+      
+
+      finish:
+
+
+ }
+
+ #define macro LOOP() = takes(4) returns (0){
+
+   // expect [index,len,pointerForFirstElement,splitValue]
+   dup2 // [len,index,len,pointerForFirstElement,splitValue]
+   dup2 // [index,len,index,len,pointerForFirstElement,splitValue]
+   eq  // [index==len,index,len,pointerForFirstElement,splitValue]
+   finish jumpi
+   // continue with loop [index,len,pointerForFirstElement,splitValue]
+   // send ether
+   sendEther:
+      SENDETHER()
+   // state [index,len,pointerForFirstElement,splitValue]
+   //increment counter
+   0x01 // [1,index,len,pointerForFirstElement,splitValue]
+   add //[index+1,len,pointerForFirstElement,splitValue]
+   // increment pointer by 0x20
+   swap2 // [pointerForFirstElement,len,index+1,splitValue]
+   0x20 add // [pointerForFirstElementIncr,len,index+1,splitValue]
+   swap2 // [index+1,len,pointerForFirstElementIncr,splitValue]
+   loop
+   jump
+
+ }
+
+ #define macro SENDETHER() = takes(4) returns (4){
+   // expect [index,len,pointerForFirstElement,splitValue]
+   // we need 7 arguments
+   0x00 0x00 0x00 0x00// [0,0,0,0,index,len,pointerForFirstElement,splitValue]
+   dup8 // [splitValue,0,0,0,0,index,len,pointerForFirstElement,splitValue]
+   dup8 // [pointerForFirstElement,splitValue,0,0,0,0,index,len,pointerForFirstElement,splitValue]
+   calldataload // [addr@[pointer],splitValue,0,0,0,0,index,len,pointerForFirstElement,splitValue]
+   gas // [gas,addr@[pointer],splitValue,0,0,0,0,index,len,pointerForFirstElement,splitValue]
+   call // [success?,index,len,pointerForFirstElement,splitValue]
+   // for now we pop
+   pop // [index,len,pointerForFirstElement,splitValue]
+   // return 4 items on the stack
    
+
+
+
  }
