@@ -15,6 +15,8 @@
  *  NOTICE: The contract should revert when an unrecognized function is called
  */
 
+// Assuming that this is a dynamic array where we can adjust length, because
+// we can push
  #define function pushh(uint256 num) payable returns()
  #define function popp() payable returns()
  #define function read(uint256 index) payable returns(uint256)
@@ -29,8 +31,7 @@
 
  #define macro MAIN() = takes(0) returns(0) {
 
-    // where should we put the length lol
-
+    
 
     0x00 calldataload 0xe0 shr// [sig]
     dup1 __FUNC_SIG(length) eq lengthLabel jumpi
@@ -71,22 +72,36 @@
  }
 
  #define macro PUSHH() = takes(0) returns (0) {
+        // if len is 0, the push will be at slot keccak(LEN_STORAGE_POINTER)+ 0 for index 0 ele
+        // if len is 1, the push will be at slot keccak(LEN_STORAGE_POINTER) + 1 for index 1 ele
+        // if len is n, the push will be at slot keccak(LEN_STORAGE_POINTER) + n for index n ele
 
-        [LEN] // [len_storage_pointer]
+        //STEP 1 : Store Keccak(pointer)
+        [LEN]
+        0x00 mstore // stack [] // mem [pointer]
+        // STEP 2 prepare stack for sha3
+    
+
+        0x20 // [size] // mem [pointer]
+        0x00 // [offset,size] // mem [pointer]
+        sha3 // [keccak(pointer)] // []
+        //STEP3: Get element
+        0x04 calldataload // [ele,keccak(pointer)] // []
+        // Step 4: Find out what slot we need to push to
+        // Formula: keccak(pointer) + current len
+        swap1 // [keccak(pointer), ele]
+        [LEN] // [len_storage_pointer,keccak(pointer),ele] // 
+        sload // [len,keccak(pointer),ele] /
+        add // [len+keccak(pointer),ele]
+       
+        // Step 5: Store ele
+          sstore // [] // []
+        // Step 6: increment len
+        [LEN] // [len_pointer] // []
         sload // [len]
-        // if len is 0, the push will be at slot 1
-        // if len is 1, the push will be at slot 2
-        // if len is n, the push will be at slot n+1
-        dup1 // [len,len]
-        0x01 add // [len+1,len]
-        0x04 calldataload // [newEle,len+1,len]
-        swap1 // [len+1,newEle,len]
-        // len+1 is the key so // [key,newEle,len]
-        sstore // [len]
-        // increment len
         0x01 add // [len+1]
-        [LEN] // [len_storage_pointer,len+1]
-        sstore // []
+        [LEN]// [len_pointer, len+1]
+        sstore // []  
  }
 
  #define macro POPP() = takes(0) returns(0){
@@ -97,24 +112,42 @@
     dup1 // [len,len]
     iszero zeroArray jumpi
     // [len]
-    // if len is 1, the last ele will be in slot 1
-    // if len is 2, the last ele will be in slot 2
-    // if len is n, the last ele will be in slot n
-    // to erase it, probably means set to zero?
+    // if len is 1, the last ele will be in keccak(pointer) + 0
+    // if len is 2, the last ele will be in keccak(pointer) + 1
+    // if len is n, the last ele will be in keccak(pointer) + (n-1) where n>0
+    //[len]
 
-  
-    // since len is here we can rename it to [len] to [targetSlot]
-    0x00 // [0,targetSlot]
-    swap1 // [targetSlot,0]
-    // len is the same as the key here so // [key,0,len]
-    sstore // []
-    // decrement len
-    [LEN] sload // [len]
-    0x01 // [1,len]
-    swap1 // [len,1]
-    sub // [len - 1]
-    [LEN] // [len_storage_pointer, len-1]
-    sstore //[]
+
+    //STEP 1: KECCAK POINTER
+    [LEN] // [pointer,len] // []
+    0x00 mstore // [len] // [pointer]
+    0x20 // [size,len] // [pointer]
+    0x00 // [offset,size,len] // [pointer]
+    sha3 // [keccak(pointer),len] // []
+
+    //STEP 2: decrement len
+    swap1 // [len,keccak(pointer)]
+    0x01 // [1,len,keccak(pointer] 
+    swap1 // [len,1,keccak(pointer] 
+    sub // [len-1,keccak(pointer] 
+    
+    // Step3 GET Last Ele pointer
+    add // [keccak(pointer) + len-1] // []
+
+    //step4: set last ele pointer to point to 0
+    0x00 // [0,keccak(pointer)+len-1] //  []
+    swap1 // [keccak(pointer)+len-1,0] //  []
+    sstore // [] // []
+
+    //step 5: decrement len
+    [LEN] // [storage pointer]
+    dup1 // [storagepointer,storagepointer]
+    sload // [len,storagepointer]
+    0x01 // [1,len,storagepointer]
+    swap1 // [len,1,storagepointer]
+    sub // [len-1, storagepointer]
+    swap1 // [storagepointer,len-1]
+    sstore
  }
 
  #define macro GET_LENGTH() = takes(0) returns (0){
@@ -127,11 +160,8 @@
  #define macro READ() = takes (0) returns (0){
     0x04 calldataload // [index]
     dup1 // [index,index]
-    // ok so if my len is 3, max index is 2
-    // if my len is 5, max index is 4
-    // if my len is 0, revert
-    // if my len is n, max index is n-1
-    // len must always be greater than index
+    
+
   
     [LEN]  // [len_storage_pointer,index,index]
     sload // [len,index,index]
@@ -145,13 +175,21 @@
     outOfBounds jump
 
     readContinue:
-        
-        // if index is 0, get a slot 1
-        // if index is 2, get at slot 3
-        // if index is n, get at slot n+1
+
+        // if index is 0, the storage slot is keccak(pointer) + 0
+        // if index is 1, storage slot is keccak(pointer) + 1
+        // if index is n, storage slot is keccak(pointer) + n where n < len     
+
         // [index]
-        0x01 add // [index+1]
-        sload // [ele at index]
+        // STEP1 , get pointer
+        [LEN]// [len_pointer,index]// []
+        0x00 mstore // [index]// [len_pointer]
+        0x20 // [size,index] // [len_pointer]
+        0x00 // [offset,size,index]// [len_pointer]
+        sha3 // [keccak(pointer),index]
+        add // [keccak(pointer)+ index]
+        //STEP2: use pointer to retrieve ele
+        sload // [ele] // []
         0x00 mstore 0x20 0x00 return
  }
 
@@ -169,11 +207,27 @@
 
     writeContinue:
     // [index]
-    0x01 add // [index+1 == key]
-    0x24 calldataload // [num,key]
-    swap1 // [key,num]
-    sstore
+    // STEP1: retrieve the pointer for this index
+    // if index is 0, the storage slot is keccak(pointer) + 0
+    // if index is 1, storage slot is keccak(pointer) + 1
+    // if index is n, storage slot is keccak(pointer) + n where n < len 
 
+    [LEN] // [len_pointer,index]// []
+    0x00 mstore // [index] // [len_pointer]
+    0x20// [size,index]//[len_pointer]
+    0x00 // [offset,size,index] // []
+    sha3 // [keccak(len_pointer),index] // []
+    add // [keccak(lenPointer) + index] // []
+
+
+    // Step 2 get the new value to for this pointer
+    0x24 calldataload // [newEle,keccak(lenPointer)+index]
+    swap1 // [keccak(lenPointer)+index,new ele]
+    
+    //Step 3: store this new value to this pointer
+
+    sstore
+  
 
 
  }
